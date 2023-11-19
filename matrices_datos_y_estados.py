@@ -106,12 +106,14 @@ class InterfazGrafica:
         try:
             n = int(self.n_entry.get())
             m = int(self.m_entry.get())
-            muestras = generar_entradas_aleatorias(n, m)
+            muestras = [np.random.randint(2, size=m) for _ in range(n)]
+            muestras = [list(muestra) + [0] * (m - len(muestra)) for muestra in muestras]
             self.matrices = procesamiento_datos(n, m, muestras)
             self.muestras_almacenadas = muestras  # Actualiza muestras_almacenadas con los datos generados
             messagebox.showinfo("Éxito", "Datos aleatorios generados correctamente.")
         except ValueError:
             messagebox.showerror("Error", "Debe ingresar valores numéricos.")
+
 
     def mostrar_canal_f(self):
         if self.matrices is not None:
@@ -169,15 +171,18 @@ class InterfazGrafica:
 
     def mostrar_matriz_aleatoria(self, muestras):
         max_len = max(len(muestra) for muestra in muestras)
-        muestras_rellenadas = [muestra + [0] * (max_len - len(muestra)) for muestra in muestras]
 
-    # Asegúrate de que todas las muestras tengan la misma longitud
-        if not all(len(muestra) == max_len for muestra in muestras_rellenadas):
+        # Asegúrate de que todas las muestras tengan la misma longitud
+        if not all(len(muestra) == max_len for muestra in muestras):
+            print("Longitudes de las muestras:", [len(muestra) for muestra in muestras])
             messagebox.showerror("Error", "Las muestras generadas aleatoriamente tienen longitudes diferentes.")
             return
 
+        muestras_rellenadas = [muestra + [0] * (max_len - len(muestra)) for muestra in muestras]
+
         df = pd.DataFrame(muestras_rellenadas, columns=[f'Canal {i + 1}' for i in range(max_len)])
         self.mostrar_dataframe(df, "Matriz de Datos")
+
 
     def mostrar_dataframe(self, df, titulo):
         top = tk.Toplevel(self.window)
