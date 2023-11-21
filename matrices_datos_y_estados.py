@@ -68,7 +68,7 @@ class InterfazGrafica:
         self.btn_mostrar_estado_f = ttk.Button(self.window, text="Mostrar EstadoEstadoF", command=self.mostrar_estado_f)
         self.btn_mostrar_canal_p = ttk.Button(self.window, text="Mostrar EstadoCanalP", command=self.mostrar_canal_p)
         self.btn_mostrar_estado_p = ttk.Button(self.window, text="Mostrar EstadoEstadoP", command=self.mostrar_estado_p)
-        self.btn_mostrar_aleatorio = ttk.Button(self.window, text="Mostrar Datos ", command=self.mostrar_aleatorio)
+        self.btn_mostrar_aleatorio = ttk.Button(self.window, text="Mostrar Datos ", command=self.mostrar_datos)
         self.btn_cargar_csv = ttk.Button(self.window, text="Cargar desde CSV", command=self.cargar_csv)
         self.btn_salir = ttk.Button(self.window, text="Salir", command=self.window.quit)
 
@@ -139,9 +139,9 @@ class InterfazGrafica:
         else:
             messagebox.showwarning("Advertencia", "Debe calcular las matrices primero (opción 1 o 2).")
 
-    def mostrar_aleatorio(self):
+    def mostrar_datos(self):
         if self.muestras_almacenadas is not None:
-            self.mostrar_matriz_aleatoria(self.muestras_almacenadas)
+            self.mostrar_matriz_datos(self.muestras_almacenadas)
         else:
             messagebox.showwarning("Advertencia", "No hay datos generados aleatoriamente.")
 
@@ -169,7 +169,7 @@ class InterfazGrafica:
         df = pd.DataFrame(matriz, columns=[f'Estado {i}' for i in range(matriz.shape[1])])
         self.mostrar_dataframe(df, titulo)
 
-    def mostrar_matriz_aleatoria(self, muestras):
+    def mostrar_matriz_datos(self, muestras):
         max_len = max(len(muestra) for muestra in muestras)
 
         # Asegúrate de que todas las muestras tengan la misma longitud
@@ -181,6 +181,7 @@ class InterfazGrafica:
         muestras_rellenadas = [muestra + [0] * (max_len - len(muestra)) for muestra in muestras]
 
         df = pd.DataFrame(muestras_rellenadas, columns=[f'Canal {i + 1}' for i in range(max_len)])
+        
         self.mostrar_dataframe(df, "Matriz de Datos")
 
 
