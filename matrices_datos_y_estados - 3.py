@@ -91,7 +91,15 @@ def normalizar(matriz):
     Returns:
         np.ndarray: Matriz normalizada.
     """
-    return matriz / np.sum(matriz, axis=1, keepdims=True)
+    suma_filas = np.sum(matriz, axis=1, keepdims=True)
+
+    # Reemplazar ceros en la suma para evitar divisiones por cero
+    suma_filas[suma_filas == 0] = 1
+
+    # Normalizar la matriz
+    matriz_normalizada = matriz / suma_filas
+
+    return matriz_normalizada
 
 # Función para marginalizar y normalizar una matriz dado un conjunto de índices de filas y columnas
 def marginalizar_y_normalizar(matriz, indices_filas, indices_columnas):
@@ -149,9 +157,10 @@ class InterfazGrafica:
         self.btn_mostrar_estado_f = ttk.Button(self.window, text="Mostrar EstadoEstadoF", command=self.mostrar_estado_f)
         self.btn_mostrar_canal_p = ttk.Button(self.window, text="Mostrar EstadoCanalP", command=self.mostrar_canal_p)
         self.btn_mostrar_estado_p = ttk.Button(self.window, text="Mostrar EstadoEstadoP", command=self.mostrar_estado_p)
+        self.btn_mostrar_resultados = ttk.Button(self.window, text="Mostrar Resultados", command=self.mostrar_resultados)
         self.btn_marginalizar_y_normalizar = ttk.Button(self.window, text="Marginalizar y Normalizar", command=self.marginalizar_y_normalizar)
         self.btn_marginalizar_y_normalizar.grid(row=15, column=0, columnspan=2, pady=5)
-        self.btn_mostrar_aleatorio = ttk.Button(self.window, text="Mostrar Datos ", command=self.mostrar_datos)
+        self.btn_mostrar_datos = ttk.Button(self.window, text="Mostrar Datos ", command=self.mostrar_datos)
         self.btn_cargar_csv = ttk.Button(self.window, text="Cargar desde CSV", command=self.cargar_csv)
         self.btn_salir = ttk.Button(self.window, text="Salir", command=self.window.quit)
 
@@ -166,9 +175,10 @@ class InterfazGrafica:
         self.btn_mostrar_estado_f.grid(row=5, column=0, columnspan=2, pady=5)
         self.btn_mostrar_canal_p.grid(row=6, column=0, columnspan=2, pady=5)
         self.btn_mostrar_estado_p.grid(row=7, column=0, columnspan=2, pady=5)
-        self.btn_mostrar_aleatorio.grid(row=8, column=0, columnspan=2, pady=5)
-        self.btn_cargar_csv.grid(row=9, column=0, columnspan=2, pady=5)
-        self.btn_salir.grid(row=10, column=0, columnspan=2, pady=5)
+        self.btn_mostrar_resultados.grid(row=8, column=0, columnspan=2, pady=5)
+        self.btn_mostrar_datos.grid(row=9, column=0, columnspan=2, pady=5)
+        self.btn_cargar_csv.grid(row=10, column=0, columnspan=2, pady=5)
+        self.btn_salir.grid(row=11, column=0, columnspan=2, pady=5)
 
     def ingresar_manualmente(self):
         """
@@ -203,23 +213,12 @@ class InterfazGrafica:
         except ValueError:
             messagebox.showerror("Error", "Debe ingresar valores numéricos.")
 
-
     def mostrar_canal_f(self):
         """
         Muestra la matriz EstadoCanalF en una ventana de mensaje.
         """
         if self.matrices is not None:
             self.mostrar_matriz(self.matrices[0], "Matriz EstadoCanalF")
-        else:
-            messagebox.showwarning("Advertencia", "Debe calcular las matrices primero (opción 1 o 2).")
-
-    def marginalizar_canal_f(self):
-        """
-        Muestra la matriz EstadoCanalF marginalizada en una ventana de mensaje.
-        """
-
-        if self.matrices is not None:
-            self.realizar_marginalizacion(self.matrices[0], [1, 2], "Matriz EstadoCanalF Marginalizada")
         else:
             messagebox.showwarning("Advertencia", "Debe calcular las matrices primero (opción 1 o 2).")
 
@@ -232,30 +231,12 @@ class InterfazGrafica:
         else:
             messagebox.showwarning("Advertencia", "Debe calcular las matrices primero (opción 1 o 2).")
 
-    def marginalizar_estado_f(self):
-        """
-        Muestra la matriz EstadoEstadoF marginalizada en una ventana de mensaje.
-        """
-        if self.matrices is not None:
-            self.realizar_marginalizacion(self.matrices[1], [0, 2], "Matriz EstadoEstadoF Marginalizada")
-        else:
-            messagebox.showwarning("Advertencia", "Debe calcular las matrices primero (opción 1 o 2).")
-
     def mostrar_canal_p(self):
         """
         Muestra la matriz EstadoCanalP en una ventana de mensaje.
         """
         if self.matrices is not None:
             self.mostrar_matriz(self.matrices[2], "Matriz EstadoCanalP")
-        else:
-            messagebox.showwarning("Advertencia", "Debe calcular las matrices primero (opción 1 o 2).")
-
-    def marginalizar_canal_p(self):
-        """
-        Muestra la matriz EstadoCanalP marginalizada en una ventana de mensaje.
-        """
-        if self.matrices is not None:
-            self.realizar_marginalizacion(self.matrices[2], [1, 2], "Matriz EstadoCanalP Marginalizada")
         else:
             messagebox.showwarning("Advertencia", "Debe calcular las matrices primero (opción 1 o 2).")
 
@@ -267,23 +248,6 @@ class InterfazGrafica:
             self.mostrar_matriz(self.matrices[3], "Matriz EstadoEstadoP")
         else:
             messagebox.showwarning("Advertencia", "Debe calcular las matrices primero (opción 1 o 2).")
-
-    def marginalizar_estado_p(self):
-        """
-        Muestra la matriz EstadoEstadoP marginalizada en una ventana de mensaje.
-        """
-        if self.matrices is not None:
-            self.realizar_marginalizacion(self.matrices[3], [0, 2], "Matriz EstadoEstadoP Marginalizada")
-        else:
-            messagebox.showwarning("Advertencia", "Debe calcular las matrices primero (opción 1 o 2).")
-
-    def realizar_marginalizacion(self, matriz, indices, titulo):
-        """
-        Realiza la marginalización de una matriz dado un conjunto de índices de columnas y muestra el resultado en una ventana de mensaje.
-        """
-        matriz_marginalizada = marginalizar(matriz, indices)
-        df_marginalizada = pd.DataFrame(matriz_marginalizada, columns=[f'Estado {i}' for i in range(matriz_marginalizada.shape[0])])
-        self.mostrar_dataframe(df_marginalizada, titulo)
 
     def marginalizar_y_normalizar(self):
         """
@@ -320,19 +284,22 @@ class InterfazGrafica:
         """
         EstadoFuturo_BC = np.zeros((2 ** 2, 2 ** 2), dtype=float)
         EstadoFuturo_ABC = np.zeros((2 ** 3, 2 ** 3), dtype=float)
-    
+
         # Marginalización y normalización sobre el estado futuro ABC
-        #1 EstadoFuturo_ABC[:, 2:] = marginalizar_y_normalizar(self.matrices[1], [1, 2], [1, 2])
         matriz_marginalizada = marginalizar_y_normalizar(self.matrices[1], [1, 2], [1, 2])
-    
-        # Asegúrate de que las dimensiones de EstadoFuturo_ABC[:, 2:] sean (2^2, 2^2)
+
+        # Asegúrate de que las dimensiones de matriz_marginalizada sean (2^2, 2^2)
         if matriz_marginalizada.shape == (2 ** 2, 2 ** 2):
             # Marginalización y normalización sobre el estado futuro BC
             EstadoFuturo_BC[:, 1:] = matriz_marginalizada
+
+            # Asegúrate de que las dimensiones de EstadoFuturo_ABC[:, 2:] sean (2^2, 2^2)
+            EstadoFuturo_ABC[:, 2:] = matriz_marginalizada
         else:
-            messagebox.showerror("Error", "Dimensiones incorrectas para la matriz EstadoFuturo_ABC[:, 2:]")
-    
+            messagebox.showerror("Error", "Dimensiones incorrectas para la matriz marginalizada")
+
         return EstadoFuturo_BC
+
 
     def calcular_estado_futuro_ABC(self):
         """
@@ -341,14 +308,13 @@ class InterfazGrafica:
         EstadoFuturo_ABC = np.zeros((2 ** 3, 2 ** 3), dtype=float)
 
         # Marginalización y normalización sobre el estado futuro ABC
-
-        #1 EstadoFuturo_ABC[:, 2:] = marginalizar_y_normalizar(self.matrices[1], [1, 2], [1, 2])
         resultado_marginalizacion = marginalizar_y_normalizar(self.matrices[1], [1, 2], [1, 2])
 
-        if resultado_marginalizacion.shape == (2 ** 3, 2):
+        if resultado_marginalizacion.shape == (2 ** 3, 2 ** 2):
             EstadoFuturo_ABC[:, 2:] = resultado_marginalizacion
         else:
             messagebox.showerror("Error", "Dimensiones incorrectas para la matriz marginalizada")
+
         return EstadoFuturo_ABC
 
     def mostrar_datos(self):
@@ -417,7 +383,6 @@ class InterfazGrafica:
         
         self.mostrar_dataframe(df, "Matriz de Datos")
 
-
     def mostrar_dataframe(self, df, titulo):
         """
         Muestra un dataframe en una ventana de mensaje.
@@ -439,17 +404,6 @@ class InterfazGrafica:
         Ejecuta la interfaz gráfica.
         """
         self.window.mainloop()
-
-        self.btn_marginalizar_canal_f = ttk.Button(self.window, text="Marginalizar EstadoCanalF", command=self.marginalizar_canal_f)
-        self.btn_marginalizar_estado_f = ttk.Button(self.window, text="Marginalizar EstadoEstadoF", command=self.marginalizar_estado_f)
-        self.btn_marginalizar_canal_p = ttk.Button(self.window, text="Marginalizar EstadoCanalP", command=self.marginalizar_canal_p)
-        self.btn_marginalizar_estado_p = ttk.Button(self.window, text="Marginalizar EstadoEstadoP", command=self.marginalizar_estado_p)
-
-        self.btn_marginalizar_canal_f.grid(row=11, column=0, columnspan=2, pady=5)
-        self.btn_marginalizar_estado_f.grid(row=12, column=0, columnspan=2, pady=5)
-        self.btn_marginalizar_canal_p.grid(row=13, column=0, columnspan=2, pady=5)
-        self.btn_marginalizar_estado_p.grid(row=14, column=0, columnspan=2, pady=5)
-
 
 if __name__ == "__main__":
     interfaz = InterfazGrafica()
