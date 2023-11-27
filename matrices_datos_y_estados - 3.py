@@ -78,7 +78,9 @@ def marginalizar(matriz, indices):
     Returns:
         np.ndarray: Matriz marginalizada.
     """
-    return np.sum(matriz[:, indices], axis=1)
+    if matriz is None:
+        return np.zeros((0,))  # Retorna una matriz vacía si la matriz es None
+    return np.sum(matriz[:, indices], axis=1) / 2  # Dividimos entre 2 para ajustar según la lógica mencionada
 
 # Función para normalizar una matriz
 def normalizar(matriz):
@@ -118,6 +120,7 @@ def marginalizar_y_normalizar(matriz, indices_filas, indices_columnas):
     matriz_normalizada = normalizar(matriz_marginalizada.reshape(-1, 2 ** len(indices_filas)))
     return matriz_normalizada.reshape(-1, 2 ** len(indices_columnas))
 
+
 # Función para generar muestras aleatorias
 def generar_entradas_aleatorias(n, m):
     """
@@ -145,6 +148,7 @@ class InterfazGrafica:
 
         self.muestras_almacenadas = None
         self.matrices = None
+
 
         self.n_label = ttk.Label(self.window, text="Número de muestras (n):")
         self.m_label = ttk.Label(self.window, text="Número de canales (m):")
@@ -255,57 +259,27 @@ class InterfazGrafica:
             EstadoFuturo_BC = self.calcular_estado_futuro_BC()
             EstadoFuturo_ABC = self.calcular_estado_futuro_ABC()
 
-            # Marginalización sobre el estado futuro, ignorando el estado futuro de A
-            matriz_marginalizada_BC = marginalizar_y_normalizar(EstadoFuturo_BC, [0], [1])
-            matriz_marginalizada_C = marginalizar_y_normalizar(EstadoFuturo_ABC, [0, 1], [2])
+            resultado_BC = marginalizar_y_normalizar(EstadoFuturo_BC, [0], [1])
+            resultado_ABC = marginalizar_y_normalizar(EstadoFuturo_ABC, [0, 1], [2])
 
-            # Marginalización sobre el estado actual A
-            matriz_marginalizada_BC_A = marginalizar_y_normalizar(matriz_marginalizada_BC, [0], [0])
-            matriz_marginalizada_C_A = marginalizar_y_normalizar(matriz_marginalizada_C, [0], [0])
-
-            # Ajuste en las multiplicaciones para garantizar la compatibilidad de dimensiones
-            resultado_final_BC = np.multiply(matriz_marginalizada_BC_A, matriz_marginalizada_BC.T)
-            resultado_final_C = np.multiply(matriz_marginalizada_C_A, matriz_marginalizada_C.T)
-
-            # Mostrar las matrices resultantes en una ventana de mensaje
-            self.mostrar_matriz(resultado_final_BC, "Estado Futuro BC (Final)")
-            self.mostrar_matriz(resultado_final_C, "Estado Futuro C (Final)")
-
+            self.mostrar_matriz(resultado_BC, "Estado Futuro BC (Marginalizado y Normalizado)")
+            self.mostrar_matriz(resultado_ABC, "Estado Futuro ABC (Marginalizado y Normalizado)")
         else:
             messagebox.showwarning("Advertencia", "Debe calcular las matrices primero (opción 1 o 2).")
 
     def calcular_estado_futuro_BC(self):
-        """
-        Calcula la matriz EstadoFuturoBC a partir de las matrices auxiliares.
-        """
-        EstadoFuturo_BC = np.zeros((2 ** 2, 2 ** 2), dtype=float)
-
-        # Marginalización y normalización sobre el estado futuro ABC
         matriz_marginalizada = marginalizar_y_normalizar(self.matrices[1], [1, 2], [1, 2])
-
         if matriz_marginalizada.shape == (2 ** 2, 2 ** 2):
-            # Marginalización y normalización sobre el estado futuro BC
-            EstadoFuturo_BC = matriz_marginalizada
+            return matriz_marginalizada / 2  # Dividimos entre 2 para ajustar según la lógica mencionada
         else:
             messagebox.showerror("Error", "Dimensiones incorrectas para la matriz marginalizada")
 
-        return EstadoFuturo_BC
-
-    def     calcular_estado_futuro_ABC(self):
-        """
-        Calcula la matriz EstadoFuturoABC a partir de las matrices auxiliares.
-        """
-        EstadoFuturo_ABC = np.zeros((2 ** 3, 2 ** 3), dtype=float)
-
-        # Marginalización y normalización sobre el estado futuro ABC
+    def calcular_estado_futuro_ABC(self):
         resultado_marginalizacion = marginalizar_y_normalizar(self.matrices[1], [0, 2], [0, 2])
-
         if resultado_marginalizacion.shape == (2 ** 3, 2 ** 3):
-            EstadoFuturo_ABC = resultado_marginalizacion
+            return resultado_marginalizacion / 2  # Dividimos entre 2 para ajustar según la lógica mencionada
         else:
             messagebox.showerror("Error", "Dimensiones incorrectas para la matriz marginalizada")
-
-        return EstadoFuturo_ABC
 
     def mostrar_datos(self):
         """
@@ -341,10 +315,13 @@ class InterfazGrafica:
 
     def mostrar_matriz(self, matriz, titulo):
         """
-        Muestra una matriz en una ventana de mensaje.
+        Muestra una matriz en una ventana de mensaje con valores redondeados a dos decimales.
         """
         filas, columnas = matriz.shape
         df = pd.DataFrame(matriz, columns=[f'Estado {i}' for i in range(columnas)])
+
+        # Redondear los valores en el dataframe a dos decimales
+        df = df.round(2)
 
         # Utilizamos PrettyTable para mostrar la matriz de manera más legible
         pt = PrettyTable()
@@ -352,8 +329,9 @@ class InterfazGrafica:
         for _, row in df.iterrows():
             pt.add_row(row)
 
-        # Mostramos la matriz en una ventana de mensaje
+        # Mostramos la matriz redondeada en una ventana de mensaje
         messagebox.showinfo(titulo, f"{pt}")
+
 
     def mostrar_matriz_datos(self, muestras):
         """
@@ -381,7 +359,7 @@ class InterfazGrafica:
         top.title(titulo)
         table = ttk.Treeview(top)
         table['columns'] = list(df.columns)
-        column_width = 75
+        column_width = 100
         for column in df.columns:
             table.column(column, width=column_width, anchor='w')
             table.heading(column, text=column, anchor='w')
